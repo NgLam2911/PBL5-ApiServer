@@ -5,3 +5,4 @@ images/*
 last.json
 model/*
 output/*
+predict/*
