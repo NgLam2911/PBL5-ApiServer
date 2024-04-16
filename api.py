@@ -1,5 +1,5 @@
-from flask import Flask, request, send_file
-from flask_restful import Api, Resource, reqparse
+from flask import Flask, send_file, render_template
+from flask_restx import Api, Resource, fields
 import werkzeug
 import os
 import app_utils
@@ -8,21 +8,43 @@ from image_proccessor import ImageProcessor
 from PIL import Image
 import pandas as pd
 from io import BytesIO
+import parsers
 
 app = Flask(__name__)
-api = Api(app)
+# Route to the index page first
+@app.route("/")
+def index():
+    return render_template('index.html')
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+api = Api(app, version='0.1', title='AI Server API', doc='/api')
 proccessor = ImageProcessor()
 hostname = 'nglam.xyz'
 if not os.path.exists('images'):
     os.makedirs('images')
 if not os.path.exists('predict'):
     os.makedirs('predict')
+    
+upload_respond_model = api.model('UploadRespond', {
+    'message': fields.String(description='Message', default="Image uploaded successfully"),
+    'uuid': fields.String(description='UUID of the image', default="")
+})
 
+upload_respond_model_fail = api.model('UploadRespondFail', {
+    'message': fields.String(description='Message', default="No file part")
+})
+
+@api.route('/upload')
+@api.doc(description='Upload an image')
 class UploadImage(Resource):
+    @api.expect(parsers.upload_parser)
+    @api.response(200, 'Image uploaded successfully', upload_respond_model)
+    @api.response(400, 'No file part', upload_respond_model_fail)
     def post(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files')
-        args = parser.parse_args()
+        args = parsers.upload_parser.parse_args()
         image_file = args['file']
         if not isinstance(image_file, werkzeug.datastructures.FileStorage):
             return {'message': 'No file part'}, 400
@@ -39,12 +61,31 @@ class UploadImage(Resource):
             'message': 'Image uploaded successfully',
             'uuid': uuid
         }, 200
-    
+        
+image_respond_model = api.model('ImageRespond', {
+    'id': fields.String(description='ID of the image'),
+    'uuid': fields.String(description='UUID of the image'),
+    'url': fields.String(description='URL of the image'),
+    'predict': fields.String(description='URL of the prediction'),
+    'labels': fields.String(description='Labels of the image'),
+    'chicken': fields.String(description='Number of chicken'),
+    'sick_chicken': fields.String(description='Number of sick chicken'),
+    'other': fields.String(description='Number of other')
+})
+
+image_respond_model_fail = api.model('ImageRespondFail', {
+    'message': fields.String(description='Message', default="Image not found")
+})
+
+@api.route('/getimage')
+@api.doc(description='Get an image with uuid')
 class GetImage(Resource):
+    @api.expect(parsers.getimage_parser)
+    @api.response(200, 'Image found', image_respond_model)
+    @api.response(404, 'Image not found', image_respond_model_fail)
+    @api.response(400, 'Invalid image', image_respond_model_fail)
     def get(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('uuid', type=str, required=True, help='id is required', location='args')
-        args = parser.parse_args()
+        args = parsers.getimage_parser.parse_args()
         uuid = args['uuid']
         if not os.path.exists(f'images/{uuid}.png'):
             return {'message': 'Image not found'}, 404
@@ -65,9 +106,13 @@ class GetImage(Resource):
             "chicken": chicken,
             "sick_chicken": sick_chicken,
             "other": other
-        }
-    
+        }, 200 
+
+# Get all images
+@api.route('/getimages')
+@api.doc(description='Get all images')
 class GetImages(Resource):
+    @api.response(200, 'Images found', [image_respond_model])
     def get(self):
         data = []
         id = 0
@@ -91,9 +136,13 @@ class GetImages(Resource):
                     "other": other
                 })
                 id += 1
-        return data
-    
+        return data, 200
+
+@api.route('/getlastimage')
+@api.doc(description='Get the last image')
 class GetLastImage(Resource):
+    @api.response(200, 'Image found', image_respond_model)
+    @api.response(404, 'No images found', image_respond_model_fail)
     def get(self):
         last = app_utils.getLastUUID()
         if last == '0':
@@ -113,7 +162,7 @@ class GetLastImage(Resource):
             "chicken": chicken,
             "sick_chicken": sick_chicken,
             "other": other
-        }
+        }, 200
     
 @app.route('/image/<uuid>')
 def image(uuid):
@@ -122,7 +171,7 @@ def image(uuid):
         return {'message': 'Image not found'}, 404
     if not os.path.isfile(filename):
         return {'message': 'Invalid image'}, 400
-    return send_file(filename, mimetype='image/jpeg')
+    return send_file(filename, mimetype='image/jpeg'), 200
 
 @app.route('/predict/<uuid>')
 def predict(uuid):
@@ -141,12 +190,7 @@ def predict(uuid):
     img_io = BytesIO()
     result_image.save(img_io, 'JPEG', quality=70)
     img_io.seek(0)
-    return send_file(img_io, mimetype='image/jpeg')
-    
-api.add_resource(UploadImage, '/upload')
-api.add_resource(GetImage, '/getimage')
-api.add_resource(GetImages, '/getimages')
-api.add_resource(GetLastImage, '/getlastimage')
+    return send_file(img_io, mimetype='image/jpeg'), 200
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=80, use_reloader=False)
