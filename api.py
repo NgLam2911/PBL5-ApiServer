@@ -63,7 +63,7 @@ class UploadImage(Resource):
         }, 200
         
 image_respond_model = api.model('ImageRespond', {
-    'id': fields.String(description='ID of the image'),
+    'id': fields.Integer(description='ID of the image'),
     'uuid': fields.String(description='UUID of the image'),
     'url': fields.String(description='URL of the image'),
     'predict': fields.String(description='URL of the prediction'),
@@ -98,7 +98,7 @@ class GetImage(Resource):
             df = pd.read_csv(f'predict/{uuid}.csv')
         labels, chicken, sick_chicken, other = proccessor.getLabelInfo(pd)
         return {
-            "id": "0",
+            "id": 0,
             "uuid": f"{uuid}",
             "url": f"http://{hostname}/image/{uuid}",
             "predict": f"http://{hostname}/predict/{uuid}",
@@ -126,7 +126,7 @@ class GetImages(Resource):
                     df = pd.read_csv(f'predict/{uuid}.csv')
                 labels, chicken, sick_chicken, other = proccessor.getLabelInfo(df)
                 data.append({
-                    "id": f"{id}",
+                    "id": id,
                     "uuid": f"{uuid}",
                     "url": f"http://{hostname}/image/{uuid}",
                     "predict": f"http://{hostname}/predict/{uuid}",
@@ -154,7 +154,7 @@ class GetLastImage(Resource):
             df = pd.read_csv(f'predict/{last}.csv')
         labels, chicken, sick_chicken, other = proccessor.getLabelInfo(df)
         return {
-            "id": "0",
+            "id": 0,
             "uuid": f"{last}",
             "url": f"http://{hostname}/image/{last}",
             "predict": f"http://{hostname}/predict/{last}",
