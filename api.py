@@ -11,6 +11,9 @@ import parsers
 
 app = Blueprint('api', __name__, url_prefix='/api')
 api = Api(app, version='0.1', title='AI Server API')
+
+image_api = api.namespace('image', description='Image operations')
+
 proccessor = ImageProcessor()
 hostname = 'nglam.xyz'
 if not os.path.exists('images'):
@@ -27,7 +30,7 @@ upload_respond_model_fail = api.model('UploadRespondFail', {
     'message': fields.String(description='Message', default="No file part")
 })
 
-@api.route('/upload')
+@image_api.route('/upload')
 @api.doc(description='Upload an image')
 class UploadImage(Resource):
     @api.expect(parsers.upload_parser)
@@ -67,7 +70,7 @@ image_respond_model_fail = api.model('ImageRespondFail', {
     'message': fields.String(description='Message', default="Image not found")
 })
 
-@api.route('/getimage')
+@image_api.route('/getimage')
 @api.doc(description='Get an image with uuid')
 class GetImage(Resource):
     @api.expect(parsers.getimage_parser)
@@ -99,7 +102,7 @@ class GetImage(Resource):
         }, 200 
 
 # Get all images
-@api.route('/getimages')
+@image_api.route('/getimages')
 @api.doc(description='Get all images')
 class GetImages(Resource):
     @api.response(200, 'Images found', [image_respond_model])
@@ -128,7 +131,7 @@ class GetImages(Resource):
                 id += 1
         return data, 200
 
-@api.route('/getlastimage')
+@image_api.route('/getlastimage')
 @api.doc(description='Get the last image')
 class GetLastImage(Resource):
     @api.response(200, 'Image found', image_respond_model)
