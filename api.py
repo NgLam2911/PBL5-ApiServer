@@ -1,4 +1,4 @@
-from flask import Flask, send_file, render_template
+from flask import Blueprint
 from flask_restx import Api, Resource, fields
 import werkzeug
 import os
@@ -7,20 +7,10 @@ import uuid as uuid_generator
 from image_proccessor import ImageProcessor
 from PIL import Image
 import pandas as pd
-from io import BytesIO
 import parsers
 
-app = Flask(__name__)
-# Route to the index page first
-@app.route("/")
-def index():
-    return render_template('index.html')
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-api = Api(app, version='0.1', title='AI Server API', doc='/api')
+app = Blueprint('api', __name__, url_prefix='/api')
+api = Api(app, version='0.1', title='AI Server API')
 proccessor = ImageProcessor()
 hostname = 'nglam.xyz'
 if not os.path.exists('images'):
@@ -163,36 +153,3 @@ class GetLastImage(Resource):
             "sick_chicken": sick_chicken,
             "other": other
         }, 200
-    
-@app.route('/image/<uuid>')
-def image(uuid):
-    filename = f'images/{uuid}.png'
-    if not os.path.exists(filename):
-        return {'message': 'Image not found'}, 404
-    if not os.path.isfile(filename):
-        return {'message': 'Invalid image'}, 400
-    return send_file(filename, mimetype='image/jpeg'), 200
-
-@app.route('/predict/<uuid>')
-def predict(uuid):
-    filename = f'images/{uuid}.png'
-    if not os.path.exists(filename):
-        return {'message': 'Image not found'}, 404
-    if not os.path.isfile(filename):
-        return {'message': 'Invalid image'}, 400
-    if not os.path.exists(f'predict/{uuid}.csv'):
-        df = proccessor.predict(Image.open(filename))
-        df.to_csv(f'predict/{uuid}.csv', index=False)
-    else:
-        df = pd.read_csv(f'predict/{uuid}.csv')
-    result_image = proccessor.plot(Image.open(filename), df)
-    # convert the image to a byte array
-    img_io = BytesIO()
-    result_image.save(img_io, 'JPEG', quality=70)
-    img_io.seek(0)
-    return send_file(img_io, mimetype='image/jpeg'), 200
-
-if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port=80, use_reloader=False)
-    # Prevent reload to avoid memory leak
-        

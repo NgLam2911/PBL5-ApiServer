@@ -1,22 +1,23 @@
 import torch
-import torchvision.transforms as transforms
-from torchvision.transforms import Resize
 from PIL import Image
 import numpy as np
 import cv2
 from pandas import DataFrame
+from app_utils import Singleton
 
-class ImageProcessor:
+
+class ImageProcessor(Singleton):
     
-    model_path = "model/model.pt"
+    model_path = "model/best.pt"
     model_type = "WongKinYiu/yolov7"
     model_name = "custom"
     
     def __init__(self):
         # load yolov7 model from model_path
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.model = torch.hub.load(self.model_type, self.model_name, self.model_path, trust_repo=True, force_reload=True)
-        self.model.eval() # set model to evaluation mode
+        if not hasattr(self, 'model'):
+            # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            self.model = torch.hub.load(self.model_type, self.model_name, self.model_path, trust_repo=True, force_reload=True)
+            self.model.eval()
         pass
     
     # Return pandas dataframe
@@ -25,8 +26,9 @@ class ImageProcessor:
             result = self.model(image)
         prediction = result.pandas().xyxy[0]
         return prediction
-    
-    def plot(self, img: Image, prediction: DataFrame):
+            
+    @staticmethod
+    def plot(img: Image, prediction: DataFrame):
         image_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
         for _, row in prediction.iterrows():
             xmin, ymin, xmax, ymax = map(int, row[['xmin', 'ymin', 'xmax', 'ymax']])
@@ -47,8 +49,9 @@ class ImageProcessor:
         # Convert back to PIL Image and return
         image = Image.fromarray(cv2.cvtColor(image_cv, cv2.COLOR_BGR2RGB))
         return image
-        
-    def getLabelInfo(self, prediction: DataFrame):
+    
+    @staticmethod
+    def getLabelInfo(prediction: DataFrame):
         labels, chicken, sick_chicken, other = 0,0,0,0
         labels = len(prediction)
         for _, row in prediction.iterrows():
