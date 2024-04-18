@@ -20,10 +20,10 @@ image_api = api.namespace('image', description='Image operations')
 
 proccessor = ImageProcessor()
 hostname = 'nglam.xyz'
-if not os.path.exists('images'):
-    os.makedirs('images')
-if not os.path.exists('predict'):
-    os.makedirs('predict')
+if not os.path.exists('data/images'):
+    os.makedirs('data/images')
+if not os.path.exists('data/predict'):
+    os.makedirs('data/predict')
     
 upload_respond_model = api.model('UploadRespond', {
     'message': fields.String(description='Message', default="Image uploaded successfully"),
