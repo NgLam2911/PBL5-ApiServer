@@ -28,7 +28,7 @@ def predict(uuid):
         return {'message': 'Image not found'}, 404
     if not os.path.isfile(filename):
         return {'message': 'Invalid image'}, 400
-    if not os.path.exists(f'predict/{uuid}.csv'):
+    if not os.path.exists(f'data/predict/{uuid}.csv'):
         df = proccessor.predict(Image.open(filename))
         df.to_csv(f'data/predict/{uuid}.csv', index=False)
     else:
