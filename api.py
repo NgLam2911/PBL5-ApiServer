@@ -70,7 +70,7 @@ image_respond_model_fail = api.model('ImageRespondFail', {
     'message': fields.String(description='Message', default="Image not found")
 })
 
-@image_api.route('/getimage')
+@image_api.route('/get')
 @api.doc(description='Get an image with uuid')
 class GetImage(Resource):
     @api.expect(parsers.getimage_parser)
@@ -102,7 +102,7 @@ class GetImage(Resource):
         }, 200 
 
 # Get all images
-@image_api.route('/getimages')
+@image_api.route('/getall')
 @api.doc(description='Get all images')
 class GetImages(Resource):
     @api.response(200, 'Images found', [image_respond_model])
@@ -131,7 +131,7 @@ class GetImages(Resource):
                 id += 1
         return data, 200
 
-@image_api.route('/getlastimage')
+@image_api.route('/last')
 @api.doc(description='Get the last image')
 class GetLastImage(Resource):
     @api.response(200, 'Image found', image_respond_model)
