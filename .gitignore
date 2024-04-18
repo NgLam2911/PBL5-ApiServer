@@ -1,8 +1,5 @@
 venv/*
 3.11venv/*
 __pycache__/*
-images/*
-last.json
-model/*
-output/*
-predict/*
+data/*
+*.pyc

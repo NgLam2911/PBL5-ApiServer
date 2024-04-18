@@ -8,16 +8,27 @@ def check_file(file):
     return None
 
 def setLastUUID(uuid: str):
-    with open('last.json', 'w') as f:
+    with open('data/last.json', 'w') as f:
         json.dump({'last': uuid}, f)
         
 def getLastUUID() -> str:
     try:
-        with open('last.json', 'r') as f:
+        with open('data/last.json', 'r') as f:
             data = json.load(f)
             return data['last']
     except:
         return '0'
+    
+def db_data_to_json(raw_data):
+    # raw_data from the database is a list of tuples
+    result = []
+    for row in raw_data:
+        json_data = json.loads(row[1])
+        food_weight = json_data['food_weight']
+        time = row[0]
+        result.append({'time': time, 'food_weight': food_weight})
+    return result
+        
     
 class Singleton:
     _instance = None

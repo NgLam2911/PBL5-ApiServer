@@ -8,7 +8,7 @@ from app_utils import Singleton
 
 class ImageProcessor(Singleton):
     
-    model_path = "model/model.pt"
+    model_path = "data/model/model.pt"
     model_type = "WongKinYiu/yolov7"
     model_name = "custom"
     
