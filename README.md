@@ -1,6 +1,11 @@
 # SETUP
 **REQUIRE Python 3.11 and lower**
 
+## Clone this repo
+```bash
+git clone https://github.com/NgLam2911/PBL5-ApiServer
+```
+
 ## Create python virtual environment
 ### Windows
 ```bat
