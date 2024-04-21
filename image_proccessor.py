@@ -3,14 +3,14 @@ from PIL import Image
 import numpy as np
 import cv2
 from pandas import DataFrame
-from app_utils import Singleton
-
+from utilties import Singleton
+from config import Config
 
 class ImageProcessor(Singleton):
-    
-    model_path = "data/model/model.pt"
-    model_type = "WongKinYiu/yolov7"
-    model_name = "custom"
+    config = Config()
+    model_path = config.model_path()
+    model_type = config.model_type()
+    model_name = config.model_name()
     
     def __init__(self):
         # load yolov7 model from model_path

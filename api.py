@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask_restx import Api, Resource, fields
 import werkzeug
 import os
-import app_utils
+from utilties import app_utils
 import uuid as uuid_generator
 from image_proccessor import ImageProcessor
 from PIL import Image
@@ -11,19 +11,19 @@ import parsers
 from database import Database
 import time as timelib
 import json
+from config import Config
 
 app = Blueprint('api', __name__, url_prefix='/api')
 api = Api(app, version='0.1.1', title='AI Server API')
 db = Database()
-
 image_api = api.namespace('image', description='Image operations')
-
 proccessor = ImageProcessor()
-hostname = 'nglam.xyz'
-if not os.path.exists('data/images'):
-    os.makedirs('data/images')
-if not os.path.exists('data/predict'):
-    os.makedirs('data/predict')
+config = Config()
+
+if not os.path.exists(config.image_path()):
+    os.makedirs(config.image_path())
+if not os.path.exists(config.predict_path()):
+    os.makedirs(config.predict_path())
     
 upload_respond_model = api.model('UploadRespond', {
     'message': fields.String(description='Message', default="Image uploaded successfully"),
@@ -46,14 +46,14 @@ class UploadImage(Resource):
         if not isinstance(image_file, werkzeug.datastructures.FileStorage):
             return {'message': 'No file part'}, 400
         uuid = str(uuid_generator.uuid4())
-        file_path = f'data/images/{uuid}.png'
+        file_path = config.image_path() + f'/{uuid}.png'
         image_file.save(file_path)
         app_utils.setLastUUID(uuid)
         # process image and save the result
         image = Image.open(file_path)
         df = proccessor.predict(image)
         # save the result to a file
-        df.to_csv(f'data/predict/{uuid}.csv', index=False)
+        df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
         return {
             'message': 'Image uploaded successfully',
             'uuid': uuid
@@ -84,21 +84,23 @@ class GetImage(Resource):
     def get(self):
         args = parsers.getimage_parser.parse_args()
         uuid = args['uuid']
-        if not os.path.exists(f'data/images/{uuid}.png'):
+        image_path = config.image_path() + f'/{uuid}.png'
+        predict_path = config.predict_path() + f'/{uuid}.csv'
+        if not os.path.exists(image_path):
             return {'message': 'Image not found'}, 404
-        if not os.path.isfile(f'data/images/{uuid}.png'):
+        if not os.path.isfile(image_path):
             return {'message': 'Invalid image'}, 400
-        if not os.path.exists(f'data/predict/{uuid}.csv'):
-            df = proccessor.predict(Image.open(f'data/images/{uuid}.png'))
-            df.to_csv(f'data/predict/{uuid}.csv', index=False)
+        if not os.path.exists(predict_path):
+            df = proccessor.predict(Image.open(image_path))
+            df.to_csv(predict_path, index=False)
         else:
-            df = pd.read_csv(f'data/predict/{uuid}.csv')
+            df = pd.read_csv(predict_path)
         labels, chicken, sick_chicken, other = proccessor.getLabelInfo(df)
         return {
             "id": 0,
             "uuid": f"{uuid}",
-            "url": f"http://{hostname}/image/{uuid}",
-            "predict": f"http://{hostname}/predict/{uuid}",
+            "url": f"http://{config.hostname()}/image/{uuid}",
+            "predict": f"http://{config.hostname()}/predict/{uuid}",
             "labels": labels,
             "chicken": chicken,
             "sick_chicken": sick_chicken,
@@ -113,20 +115,20 @@ class GetImages(Resource):
     def get(self):
         data = []
         id = 0
-        for filename in os.listdir('data/images'):
+        for filename in os.listdir(config.image_path()):
             if filename.endswith('.png'):
                 uuid = filename.split('.')[0]
-                if not os.path.exists(f'data/predict/{uuid}.csv'):
-                    df = proccessor.predict(Image.open(f'data/images/{uuid}.png'))
-                    df.to_csv(f'data/predict/{uuid}.csv', index=False)
+                if not os.path.exists(config.predict_path() + f'/{uuid}.csv'):
+                    df = proccessor.predict(Image.open(config.image_path() + f'/{uuid}.png'))
+                    df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
                 else:
-                    df = pd.read_csv(f'data/predict/{uuid}.csv')
+                    df = pd.read_csv(config.predict_path() + f'/{uuid}.csv')
                 labels, chicken, sick_chicken, other = proccessor.getLabelInfo(df)
                 data.append({
                     "id": id,
                     "uuid": f"{uuid}",
-                    "url": f"http://{hostname}/image/{uuid}",
-                    "predict": f"http://{hostname}/predict/{uuid}",
+                    "url": f"http://{config.hostname()}/image/{uuid}",
+                    "predict": f"http://{config.hostname()}/predict/{uuid}",
                     "labels": labels,
                     "chicken": chicken,
                     "sick_chicken": sick_chicken,
@@ -144,17 +146,17 @@ class GetLastImage(Resource):
         last = app_utils.getLastUUID()
         if last == '0':
             return {'message': 'No images found'}, 404
-        if not os.path.exists(f'data/predict/{last}.csv'):
-            df = proccessor.predict(Image.open(f'data/images/{last}.png'))
-            df.to_csv(f'data/predict/{last}.csv', index=False)
+        if not os.path.exists(config.predict_path() + f'/{last}.csv'):
+            df = proccessor.predict(Image.open(config.image_path() + f'/{last}.png'))
+            df.to_csv(config.predict_path() + f'/{last}.csv', index=False)
         else:
-            df = pd.read_csv(f'data/predict/{last}.csv')
+            df = pd.read_csv(config.predict_path() + f'/{last}.csv')
         labels, chicken, sick_chicken, other = proccessor.getLabelInfo(df)
         return {
             "id": 0,
             "uuid": f"{last}",
-            "url": f"http://{hostname}/image/{last}",
-            "predict": f"http://{hostname}/predict/{last}",
+            "url": f"http://{config.hostname()}/image/{last}",
+            "predict": f"http://{config.hostname()}/predict/{last}",
             "labels": labels,
             "chicken": chicken,
             "sick_chicken": sick_chicken,
