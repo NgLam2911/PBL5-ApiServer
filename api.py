@@ -93,7 +93,7 @@ class GetImage(Resource):
             df.to_csv(f'data/predict/{uuid}.csv', index=False)
         else:
             df = pd.read_csv(f'data/predict/{uuid}.csv')
-        labels, chicken, sick_chicken, other = proccessor.getLabelInfo(pd)
+        labels, chicken, sick_chicken, other = proccessor.getLabelInfo(df)
         return {
             "id": 0,
             "uuid": f"{uuid}",
