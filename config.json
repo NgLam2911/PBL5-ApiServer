@@ -1,0 +1,10 @@
+{
+    "hostname": "nglam.xyz",
+    "model_path": "data/model/model.pt",
+    "model_type": "WongKinYiu/yolov7",
+    "model_name": "custom",
+    "image_path": "data/images",
+    "predict_path": "data/predict",
+    "db_path": "data/data.sqlite",
+    "last_uuid_path": "data/last.json"
+}
