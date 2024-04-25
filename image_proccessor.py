@@ -37,15 +37,15 @@ class ImageProcessor(Singleton):
             label = row['name']
             # Draw the rectangle on the image depending on the label
             if label == "chicken":
-                # green
-                box_color = (0, 255, 0)
+                # black
+                box_color = (0, 0, 0)
             elif label == "sick_chicken":
                 # red
                 box_color = (255, 0, 0)
             else:
                 # gray
                 box_color = (128, 128, 128)
-            cv2.rectangle(image_cv, (xmin, ymin), (xmax, ymax), box_color, 2)
+            cv2.rectangle(image_cv, (xmin, ymin), (xmax, ymax), box_color, 4)
             # Put the label on the image
             cv2.putText(image_cv, label, (xmin + 5, ymin + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 2)
         # Convert back to PIL Image and return
