@@ -21,10 +21,12 @@ class ImageProcessor(Singleton):
         pass
     
     # Return pandas dataframe
-    def predict(self, image: Image):
+    def predict(self, image: Image, conf: float = 0.6):
         with torch.no_grad():
             result = self.model(image)
         prediction = result.pandas().xyxy[0]
+        # Filter out predictions with confidence less than `conf`
+        prediction = prediction[prediction['confidence'] >= conf]
         return prediction
             
     @staticmethod
