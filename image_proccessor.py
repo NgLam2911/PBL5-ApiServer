@@ -29,7 +29,7 @@ class ImageProcessor(Singleton):
     
     def ultralytics_to_pandas(self, results):
         boxes_list = results[0].boxes.data.tolist()
-        columns = ['x_min', 'y_min', 'x_max', 'y_max', 'confidence', 'class']
+        columns = ['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class']
 
         for i in boxes_list:
             i[:4] = [round(i, 1) for i in i[:4]]
