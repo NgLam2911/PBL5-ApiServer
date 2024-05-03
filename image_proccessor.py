@@ -40,7 +40,7 @@ class ImageProcessor(Singleton):
         return result_df
     
     # Return pandas dataframe
-    def predict(self, image: Image, conf: float = 0.6):
+    def predict(self, image: Image, conf: float = 0.4):
         if self.model_type == "ultralytics/yolo":
             result = self.model(image)
             prediction = self.ultralytics_to_pandas(result)
