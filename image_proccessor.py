@@ -5,6 +5,8 @@ import cv2
 from pandas import DataFrame
 from utilties import Singleton
 from config import Config
+from ultralytics import YOLO
+import pandas as pd
 
 class ImageProcessor(Singleton):
     config = Config()
@@ -13,20 +15,43 @@ class ImageProcessor(Singleton):
     model_name = config.model_name()
     
     def __init__(self):
-        # load yolov7 model from model_path
+        # load yolo model from model_path
         if not hasattr(self, 'model'):
-            # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-            self.model = torch.hub.load(self.model_type, self.model_name, self.model_path, trust_repo=True, force_reload=True)
-            self.model.eval()
+            # Because of ultralytics/ultralytics doesnt fully support pytorch hub.
+            if self.model_type == "ultralytics/yolo":
+                self.model = YOLO(self.model_path)
+                pass
+            else:
+                # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+                self.model = torch.hub.load(self.model_type, self.model_name, self.model_path, trust_repo=True, force_reload=True)
+                self.model.eval()
         pass
+    
+    def ultralytics_to_pandas(self, results):
+        boxes_list = results[0].boxes.data.tolist()
+        columns = ['x_min', 'y_min', 'x_max', 'y_max', 'confidence', 'class']
+
+        for i in boxes_list:
+            i[:4] = [round(i, 1) for i in i[:4]]
+            i[5] = int(i[5])
+            i.append(results[0].names[i[5]])
+        columns.append('name')
+        result_df = pd.DataFrame(boxes_list, columns=columns)
+        return result_df
     
     # Return pandas dataframe
     def predict(self, image: Image, conf: float = 0.6):
-        with torch.no_grad():
+        if self.model_type == "ultralytics/yolo":
             result = self.model(image)
-        prediction = result.pandas().xyxy[0]
-        # Filter out predictions with confidence less than `conf`
-        prediction = prediction[prediction['confidence'] >= conf]
+            prediction = self.ultralytics_to_pandas(result)
+            # Filter out predictions with confidence less than `conf`
+            prediction = prediction[prediction['confidence'] >= conf]
+        else:
+            with torch.no_grad():
+                result = self.model(image)
+            prediction = result.pandas().xyxy[0]
+            # Filter out predictions with confidence less than `conf`
+            prediction = prediction[prediction['confidence'] >= conf]
         return prediction
             
     @staticmethod

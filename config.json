@@ -1,7 +1,7 @@
 {
     "hostname": "nglam.xyz",
-    "model_path": "data/model/model.pt",
-    "model_type": "WongKinYiu/yolov7",
+    "model_path": "data/model/bestv8.pt",
+    "model_type": "ultralytics/yolo",
     "model_name": "custom",
     "image_path": "data/images",
     "predict_path": "data/predict",

@@ -1,8 +1,10 @@
 from flask import Flask, render_template
 from app import app as web_app
 from api import app as api_app
+import requests
 
 app = Flask(__name__)
+
 # Apply for all routes
 @app.errorhandler(404)
 def page_not_found(e):
