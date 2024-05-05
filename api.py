@@ -43,6 +43,7 @@ class UploadImage(Resource):
     def post(self):
         args = parsers.upload_parser.parse_args()
         image_file = args['file']
+        amg = args['amg']
         if not isinstance(image_file, werkzeug.datastructures.FileStorage):
             return {'message': 'No file part'}, 400
         uuid = str(uuid_generator.uuid4())
@@ -54,6 +55,7 @@ class UploadImage(Resource):
         df = proccessor.predict(image)
         # save the result to a file
         df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
+        print(amg)
         return {
             'message': 'Image uploaded successfully',
             'uuid': uuid
