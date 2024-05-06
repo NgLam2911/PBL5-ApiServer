@@ -74,7 +74,8 @@ class ImageProcessor(Singleton):
         image = Image.fromarray(cv2.cvtColor(image_cv, cv2.COLOR_BGR2RGB))
         return image
     
-    def ir2image(self, raw_amg) -> Image:
+    @staticmethod
+    def ir2image(raw_amg) -> Image:
         array = np.array(raw_amg).reshape(8, 8)
         # Interpolate the array to 800x600
         max_temp = max(raw_amg)
@@ -90,6 +91,17 @@ class ImageProcessor(Singleton):
         # Convert to PIL Image
         image = Image.fromarray(array)
         return image
+    
+    @staticmethod
+    def dftemp(raw_amg: list, raw_df: DataFrame) -> DataFrame:
+        # Convert raw_amg to 8x8 array
+        amg = np.array(raw_amg).reshape(8, 8)
+        collumns = ['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'temp']
+        for _, row in raw_df.iterrows():
+            xmin, ymin, xmax, ymax = map(int, row[['xmin', 'ymin', 'xmax', 'ymax']])
+            # Caculate the average temperature in the bounding box in 8x8 array (image resolution is 800x600)
+            temp = amg[ymin // 75:ymax // 75, xmin // 100:xmax // 100].mean()
+            raw_df.loc[_, 'temp'] = temp
     
     @staticmethod
     def getLabelInfo(prediction: DataFrame):
