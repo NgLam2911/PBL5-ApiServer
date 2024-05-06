@@ -182,7 +182,7 @@ sensor_api = api.namespace('sensor', description='Sensor operations')
 
 sensor_data_respond = api.model('SensorDataRespond', {
     'time': fields.Integer(description='Time of the data'),
-    'food_weight': fields.Float(description='Weight of the food in grams')
+    'food_weight': fields.Float(description='Weight of the food in grams'),
     'water_weight': fields.Float(description='Weight of the water in grams')
 })
 
@@ -204,22 +204,23 @@ class SensorData(Resource):
         time = args['time']
         from_time = args['from_time']
         to_time = args['to_time']
-        raw_data = db.get_data(time, from_time, to_time)
-        return app_utils.db_data_to_json(raw_data), 200
+        data = db.getSensorData(time, from_time, to_time)
+        return data, 200
     
     @api.expect(parsers.postsensordata_parser)
     @api.response(200, 'Data added successfully', sensor_data_post_success)
-    @api.response(400, 'Invalid food weight', sensor_data_post_fail)
+    @api.response(400, 'Invalid data', sensor_data_post_fail)
     @api.doc(description='Add sensor data')
     def post(self):
         args = parsers.postsensordata_parser.parse_args()
         time = int(timelib.time())
         food_weight = args['food_weight']
-        if not isinstance(food_weight, int):
-            return {'message': 'Invalid food weight'}, 400
-        db.insert_data(time, json.dumps({
-            "food_weight": food_weight
-        }))
+        water_weight = args['water_weight']
+        if not isinstance(food_weight, float):
+            return {'message': 'Invalid data'}, 400
+        if not isinstance(water_weight, float):
+            return {'message': 'Invalid data'}, 400
+        db.addSensorData(time, food_weight, water_weight)
         return {'message': 'Data added successfully'}, 200
         
     
