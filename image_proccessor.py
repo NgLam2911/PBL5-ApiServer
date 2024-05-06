@@ -76,10 +76,6 @@ class ImageProcessor(Singleton):
     
     def ir2image(self, raw_amg) -> Image:
         array = np.array(raw_amg).reshape(8, 8)
-        for i in range(8):
-            for j in range(8):
-                print(array[i][j], end=" ")
-            print()
         # Interpolate the array to 800x600
         max_temp = max(raw_amg)
         min_temp = min(raw_amg)
