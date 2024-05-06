@@ -46,7 +46,7 @@ def predict(uuid):
 
 @app.route('/infared/<uuid>')
 def infared(uuid):
-    imagedata = db.get_image_data(uuid)
+    imagedata = db.getImageDataByUUID(uuid)
     if not imagedata:
         return {'message': 'Image not found'}, 404
     raw_amg = imagedata['amg'] 
