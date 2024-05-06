@@ -21,7 +21,6 @@ class Config(Singleton):
                     self.db_auth_userv = self.config['database']['auth']['user']
                     self.db_auth_passwordv = self.config['database']['auth']['password']
                     self.db_auth_sourcev = self.config['database']['auth']['authSource']
-                    self.last_uuid_pathv = self.config['last_uuid_path']
             except:
                 self.hostnamev = "localhost:5000"
                 self.model_pathv = "yolov5s.pt"
@@ -51,8 +50,7 @@ class Config(Singleton):
                             "password": self.db_auth_passwordv,
                             "authSource": self.db_auth_sourcev
                         }
-                    },
-                    "last_uuid_path": self.last_uuid_pathv
+                    }
                 }
                 with open(config_file, 'w') as f:
                     json.dump(self.config, f)
@@ -90,9 +88,6 @@ class Config(Singleton):
     
     def db_auth_source(self):
         return self.db_auth_sourcev
-    
-    def last_uuid_path(self):
-        return self.last_uuid_pathv
     
     
     

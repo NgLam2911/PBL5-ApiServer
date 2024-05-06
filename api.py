@@ -2,7 +2,6 @@ from flask import Blueprint
 from flask_restx import Api, Resource, fields
 import werkzeug
 import os
-from utilties import app_utils
 import uuid as uuid_generator
 from image_proccessor import ImageProcessor
 from PIL import Image
@@ -14,7 +13,7 @@ import json
 from config import Config
 
 app = Blueprint('api', __name__, url_prefix='/api')
-api = Api(app, version='0.1.1', title='AI Server API')
+api = Api(app, version='0.2.0', title='AI Server API')
 db = Database()
 image_api = api.namespace('image', description='Image operations')
 proccessor = ImageProcessor()
@@ -49,13 +48,14 @@ class UploadImage(Resource):
         uuid = str(uuid_generator.uuid4())
         file_path = config.image_path() + f'/{uuid}.png'
         image_file.save(file_path)
-        app_utils.setLastUUID(uuid)
+        time = int(timelib.time())
+        db.setLastUUID(uuid)
         # process image and save the result
         image = Image.open(file_path)
         df = proccessor.predict(image)
         # save the result to a file
         df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
-        print(amg)
+        db.addImageData(time, uuid, amg)
         return {
             'message': 'Image uploaded successfully',
             'uuid': uuid
@@ -66,10 +66,11 @@ image_respond_model = api.model('ImageRespond', {
     'uuid': fields.String(description='UUID of the image'),
     'url': fields.String(description='URL of the image'),
     'predict': fields.String(description='URL of the prediction'),
+    'raw-amg': fields.String(description='Raw IR camera sensor data of the image'),
+    'time': fields.Integer(description='Time of the image'),
     'labels': fields.String(description='Labels of the image'),
     'chicken': fields.String(description='Number of chicken'),
-    'sick_chicken': fields.String(description='Number of sick chicken'),
-    'other': fields.String(description='Number of other')
+    'non-chicken': fields.String(description='Number of other')
 })
 
 image_respond_model_fail = api.model('ImageRespondFail', {
@@ -97,16 +98,20 @@ class GetImage(Resource):
             df.to_csv(predict_path, index=False)
         else:
             df = pd.read_csv(predict_path)
-        labels, chicken, sick_chicken, other = proccessor.getLabelInfo(df)
+        labels, chicken, non_chicken = proccessor.getLabelInfo(df)
+        imagedata = db.getImageDataByUUID(uuid)
+        amg = imagedata['amg']
+        time = imagedata['time']
         return {
             "id": 0,
             "uuid": f"{uuid}",
             "url": f"http://{config.hostname()}/image/{uuid}",
             "predict": f"http://{config.hostname()}/predict/{uuid}",
+            "raw-amg": amg,
+            "time": time,
             "labels": labels,
             "chicken": chicken,
-            "sick_chicken": sick_chicken,
-            "other": other
+            "non-chicken": non_chicken
         }, 200 
 
 # Get all images
@@ -125,16 +130,20 @@ class GetImages(Resource):
                     df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
                 else:
                     df = pd.read_csv(config.predict_path() + f'/{uuid}.csv')
-                labels, chicken, sick_chicken, other = proccessor.getLabelInfo(df)
+                labels, chicken, non_chicken = proccessor.getLabelInfo(df)
+                imagedata = db.getImageDataByUUID(uuid)
+                amg = imagedata['amg']
+                time = imagedata['time']
                 data.append({
                     "id": id,
                     "uuid": f"{uuid}",
                     "url": f"http://{config.hostname()}/image/{uuid}",
                     "predict": f"http://{config.hostname()}/predict/{uuid}",
+                    "raw-amg": amg,
+                    "time": time,
                     "labels": labels,
                     "chicken": chicken,
-                    "sick_chicken": sick_chicken,
-                    "other": other
+                    "non-chicken": non_chicken
                 })
                 id += 1
         return data, 200
@@ -145,7 +154,7 @@ class GetLastImage(Resource):
     @api.response(200, 'Image found', image_respond_model)
     @api.response(404, 'No images found', image_respond_model_fail)
     def get(self):
-        last = app_utils.getLastUUID()
+        last = db.getLastUUID()
         if last == '0':
             return {'message': 'No images found'}, 404
         if not os.path.exists(config.predict_path() + f'/{last}.csv'):
@@ -153,23 +162,28 @@ class GetLastImage(Resource):
             df.to_csv(config.predict_path() + f'/{last}.csv', index=False)
         else:
             df = pd.read_csv(config.predict_path() + f'/{last}.csv')
-        labels, chicken, sick_chicken, other = proccessor.getLabelInfo(df)
+        labels, chicken, non_chicken = proccessor.getLabelInfo(df)
+        imagedata = db.getImageDataByUUID(last)
+        amg = imagedata['amg']
+        time = imagedata['time']
         return {
             "id": 0,
             "uuid": f"{last}",
             "url": f"http://{config.hostname()}/image/{last}",
             "predict": f"http://{config.hostname()}/predict/{last}",
+            "raw-amg": amg,
+            "time": time,
             "labels": labels,
             "chicken": chicken,
-            "sick_chicken": sick_chicken,
-            "other": other
+            "non-chicken": non_chicken
         }, 200
         
 sensor_api = api.namespace('sensor', description='Sensor operations')
 
 sensor_data_respond = api.model('SensorDataRespond', {
     'time': fields.Integer(description='Time of the data'),
-    'food_weight': fields.Integer(description='Weight of the food in grams')
+    'food_weight': fields.Float(description='Weight of the food in grams')
+    'water_weight': fields.Float(description='Weight of the water in grams')
 })
 
 sensor_data_post_success = api.model('SensorDataPostSuccess', {

@@ -62,14 +62,11 @@ class ImageProcessor(Singleton):
             label = row['name']
             # Draw the rectangle on the image depending on the label
             if label == "chicken":
-                # black
-                box_color = (0, 0, 0)
-            elif label == "sick_chicken":
-                # red
-                box_color = (255, 0, 0)
+                # yellow
+                box_color = (0, 255, 255)
             else:
-                # gray
-                box_color = (128, 128, 128)
+                # black
+                box_color = (255, 0, 0)
             cv2.rectangle(image_cv, (xmin, ymin), (xmax, ymax), box_color, 4)
             # Put the label on the image
             cv2.putText(image_cv, label, (xmin + 5, ymin + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 2)
@@ -79,14 +76,12 @@ class ImageProcessor(Singleton):
     
     @staticmethod
     def getLabelInfo(prediction: DataFrame):
-        labels, chicken, sick_chicken, other = 0,0,0,0
+        labels, chicken, non_chicken = 0,0,0
         labels = len(prediction)
         for _, row in prediction.iterrows():
             label = row['name']
             if label == "chicken":
                 chicken += 1
-            elif label == "sick_chicken":
-                sick_chicken += 1
             else:
-                other += 1
-        return labels, chicken, sick_chicken, other
+                non_chicken += 1
+        return labels, chicken, non_chicken

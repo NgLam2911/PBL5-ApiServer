@@ -4,7 +4,7 @@ from flask_restx import reqparse
 upload_parser = reqparse.RequestParser()
 upload_parser.add_argument('file', type=werkzeug.datastructures.FileStorage, 
                            location='files', help="Image you want to upload", required=True)
-upload_parser.add_argument('amg', type=str, required=True, help='Raw AMG sensor data of the image', location='args')
+upload_parser.add_argument('amg', type=str, required=True, help='Raw IR camera sensor data of the image', location='args')
 
 getimage_parser = reqparse.RequestParser()
 getimage_parser.add_argument('uuid', type=str, required=True, help='id of the image', location='args')
@@ -16,3 +16,4 @@ getsensordata_parser.add_argument('to_time', type=int, required=False, help='To 
 
 postsensordata_parser = reqparse.RequestParser()
 postsensordata_parser.add_argument('food_weight', type=int, required=True, help='Weight of the food in grams', location='args')
+postsensordata_parser.add_argument('water_weight', type=int, required=True, help='Weight of the water in grams', location='args')
