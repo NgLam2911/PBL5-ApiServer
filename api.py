@@ -55,6 +55,7 @@ class UploadImage(Resource):
         # save the result to a file
         df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
         db.addImageData(time, uuid, amg)
+        print(f'Got image: {uuid}')
         return {
             'message': 'Image uploaded successfully',
             'uuid': uuid
