@@ -9,7 +9,6 @@ import pandas as pd
 import parsers
 from database import Database
 import time as timelib
-import json
 from config import Config
 
 app = Blueprint('api', __name__, url_prefix='/api')

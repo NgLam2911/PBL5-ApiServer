@@ -15,5 +15,5 @@ getsensordata_parser.add_argument('from_time', type=int, required=False, help='F
 getsensordata_parser.add_argument('to_time', type=int, required=False, help='To time of the data in Unix timestamp', location='args')
 
 postsensordata_parser = reqparse.RequestParser()
-postsensordata_parser.add_argument('food_weight', type=int, required=True, help='Weight of the food in grams', location='args')
-postsensordata_parser.add_argument('water_weight', type=int, required=True, help='Weight of the water in grams', location='args')
+postsensordata_parser.add_argument('food_weight', type=float, required=True, help='Weight of the food in grams', location='args')
+postsensordata_parser.add_argument('water_weight', type=float, required=True, help='Weight of the water in grams', location='args')
