@@ -53,7 +53,7 @@ class Config(Singleton):
                     }
                 }
                 with open(config_file, 'w') as f:
-                    json.dump(self.config, f)
+                    json.dump(self.config, f, indent=4)
                 
                 
     def hostname(self):
