@@ -131,7 +131,7 @@ class Database(Singleton):
         result = []
         for i in query:
             if not i:
-                continue
+                continue # Skip None
             result.append({
                 'time': i['time'],
                 'uuid': i['uuid'],

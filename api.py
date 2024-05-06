@@ -12,7 +12,7 @@ import time as timelib
 from config import Config
 
 app = Blueprint('api', __name__, url_prefix='/api')
-api = Api(app, version='0.2.0', title='AI Server API')
+api = Api(app, version='0.2.1', title='AI Server API')
 db = Database()
 image_api = api.namespace('image', description='Image operations')
 proccessor = ImageProcessor()
@@ -146,6 +146,45 @@ class GetImages(Resource):
                 })
                 id += 1
         return data, 200
+    
+@image_api.route('/getbytime')
+@api.doc(description='Get images by time')
+class GetImagesByTime(Resource):
+    @api.expect(parsers.getimagetime_parser)
+    @api.response(200, 'Images found', [image_respond_model])
+    def get(self):
+        args = parsers.getimagetime_parser.parse_args()
+        time = args['time']
+        from_time = args['from_time']
+        to_time = args['to_time']
+        data = db.getImageData(time, from_time, to_time)
+        result = []
+        id = 0
+        for i in data:
+            uuid = i['uuid']
+            if not os.path.exists(config.image_path() + f'/{uuid}.png'):
+                continue
+            if not os.path.exists(config.predict_path() + f'/{uuid}.csv'):
+                df = proccessor.predict(Image.open(config.image_path() + f'/{uuid}.png'))
+                df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
+            else:
+                df = pd.read_csv(config.predict_path() + f'/{uuid}.csv')
+            labels, chicken, non_chicken = proccessor.getLabelInfo(df)
+            amg = i['amg']
+            time = i['time']
+            result.append({
+                "id": id,
+                "uuid": f"{uuid}",
+                "url": f"http://{config.hostname()}/image/{uuid}",
+                "predict": f"http://{config.hostname()}/predict/{uuid}",
+                "raw-amg": amg,
+                "time": time,
+                "labels": labels,
+                "chicken": chicken,
+                "non-chicken": non_chicken
+            })
+            id += 1
+        return result, 200
 
 @image_api.route('/last')
 @api.doc(description='Get the last image')
