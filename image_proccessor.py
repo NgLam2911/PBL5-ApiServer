@@ -74,6 +74,27 @@ class ImageProcessor(Singleton):
         image = Image.fromarray(cv2.cvtColor(image_cv, cv2.COLOR_BGR2RGB))
         return image
     
+    def ir2image(self, raw_amg) -> Image:
+        array = np.array(raw_amg).reshape(8, 8)
+        for i in range(8):
+            for j in range(8):
+                print(array[i][j], end=" ")
+            print()
+        # Interpolate the array to 800x600
+        max_temp = max(raw_amg)
+        min_temp = min(raw_amg)
+        array = cv2.resize(array, (800, 600), interpolation=cv2.INTER_CUBIC)
+        
+        array = (array - array.min()) / (array.max() - array.min()) * 255
+        array = array.astype(np.uint8)
+        array = cv2.applyColorMap(array, cv2.COLORMAP_JET)
+        # write min and max temperature to the top left corner
+        cv2.putText(array, f"Min: {min_temp}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(array, f"Max: {max_temp}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        # Convert to PIL Image
+        image = Image.fromarray(array)
+        return image
+    
     @staticmethod
     def getLabelInfo(prediction: DataFrame):
         labels, chicken, non_chicken = 0,0,0

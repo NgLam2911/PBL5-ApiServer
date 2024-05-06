@@ -12,7 +12,7 @@ import time as timelib
 from config import Config
 
 app = Blueprint('api', __name__, url_prefix='/api')
-api = Api(app, version='0.2.1', title='AI Server API')
+api = Api(app, version='0.2.2', title='AI Server API')
 db = Database()
 image_api = api.namespace('image', description='Image operations')
 proccessor = ImageProcessor()
@@ -66,6 +66,7 @@ image_respond_model = api.model('ImageRespond', {
     'uuid': fields.String(description='UUID of the image'),
     'url': fields.String(description='URL of the image'),
     'predict': fields.String(description='URL of the prediction'),
+    'infared': fields.String(description='URL of the infared image'),
     'raw-amg': fields.String(description='Raw IR camera sensor data of the image'),
     'time': fields.Integer(description='Time of the image'),
     'labels': fields.String(description='Labels of the image'),
@@ -107,6 +108,7 @@ class GetImage(Resource):
             "uuid": f"{uuid}",
             "url": f"http://{config.hostname()}/image/{uuid}",
             "predict": f"http://{config.hostname()}/predict/{uuid}",
+            'infared': f"http://{config.hostname()}/infared/{uuid}",
             "raw-amg": amg,
             "time": time,
             "labels": labels,
@@ -139,6 +141,7 @@ class GetImages(Resource):
                     "uuid": f"{uuid}",
                     "url": f"http://{config.hostname()}/image/{uuid}",
                     "predict": f"http://{config.hostname()}/predict/{uuid}",
+                    'infared': f"http://{config.hostname()}/infared/{uuid}",
                     "raw-amg": amg,
                     "time": time,
                     "labels": labels,
@@ -178,6 +181,7 @@ class GetImagesByTime(Resource):
                 "uuid": f"{uuid}",
                 "url": f"http://{config.hostname()}/image/{uuid}",
                 "predict": f"http://{config.hostname()}/predict/{uuid}",
+                'infared': f"http://{config.hostname()}/infared/{uuid}",
                 "raw-amg": amg,
                 "time": time,
                 "labels": labels,
@@ -210,6 +214,7 @@ class GetLastImage(Resource):
             "uuid": f"{last}",
             "url": f"http://{config.hostname()}/image/{last}",
             "predict": f"http://{config.hostname()}/predict/{last}",
+            'infared': f"http://{config.hostname()}/infared/{last}",
             "raw-amg": amg,
             "time": time,
             "labels": labels,
