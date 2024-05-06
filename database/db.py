@@ -10,6 +10,12 @@ class Database(Singleton):
     
     # All time format is in UNIX timestamp (int)
     
+    def CursorToArray(self, cursor):
+        result = []
+        for i in cursor:
+            result.append(i)
+        return result
+    
     def connect(self) -> MongoClient:
         return MongoClient(self.config.db_host(),
                            username=self.config.db_auth_user(),
@@ -27,14 +33,14 @@ class Database(Singleton):
             db = client[self.config.db_name()]
             col = db["sensor-data"]
             if time:
-                return col.find_one({'time': time})
+                return [col.find_one({'time': time})]
             elif from_time:
                 if to_time:
-                    return col.find({'time': {'$gte': from_time, '$lte': to_time}})
+                    return self.CursorToArray(col.find({'time': {'$gte': from_time, '$lte': to_time}}))
                 else:
-                    return col.find({'time': {'$gte': from_time}})
+                    return self.CursorToArray(col.find({'time': {'$gte': from_time}}))
             else:
-                return col.find()
+                return self.CursorToArray(col.find())
     
     def delete_sensor_data(self, time=None, from_time=None, to_time=None):
         with self.connect() as client:
@@ -61,14 +67,14 @@ class Database(Singleton):
             db = client[self.config.db_name()]
             col = db["image-data"]
             if time:
-                return col.find_one({'time': time})
+                return [col.find_one({'time': time})]
             elif from_time:
                 if to_time:
-                    return col.find({'time': {'$gte': from_time, '$lte': to_time}})
+                    return self.CursorToArray(col.find({'time': {'$gte': from_time, '$lte': to_time}}))
                 else:
-                    return col.find({'time': {'$gte': from_time}})
+                    return self.CursorToArray(col.find({'time': {'$gte': from_time}}))
             else:
-                return col.find()
+                return self.CursorToArray(col.find())
             
     def get_image_data_by_uuid(self, uuid: str):
         with self.connect() as client:
@@ -105,6 +111,8 @@ class Database(Singleton):
         query = self.get_sensor_data(time, from_time, to_time)
         result = []
         for i in query:
+            if not i:
+                continue # Skip None
             result.append({
                 'time': i['time'],
                 'food_weight': i['food_weight'],
@@ -122,6 +130,8 @@ class Database(Singleton):
         query = self.get_image_data(time, from_time, to_time)
         result = []
         for i in query:
+            if not i:
+                continue
             result.append({
                 'time': i['time'],
                 'uuid': i['uuid'],
