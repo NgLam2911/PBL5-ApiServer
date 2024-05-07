@@ -110,7 +110,7 @@ class DataProcessor(Singleton):
             xmin, ymin, xmax, ymax, confidence, classs, name = row[['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name']]
             # Caculate the average temperature in the bounding box in 8x8 array (image resolution is 800x600)
             temp = amg[int(ymin / 75):int(ymax / 75), int(xmin / 100):int(xmax / 100)].mean()
-            df = df.append({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax, 'confidence': confidence, 'class': classs, 'name': name, 'temp': temp}, ignore_index=True)
+            df = df.append(pd.Series({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax, 'confidence': confidence, 'class': classs, 'name': name, 'temp': temp}), ignore_index=True)
         return df
     
     @staticmethod
