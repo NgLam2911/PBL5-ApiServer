@@ -82,6 +82,26 @@ class Database(Singleton):
             col = db["image-data"]
             return col.find_one({'uuid': uuid})
         
+    def delete_image_data(self, time=None, from_time=None, to_time=None):
+        with self.connect() as client:
+            db = client[self.config.db_name()]
+            col = db["image-data"]
+            if time:
+                return col.delete_one({'time': time})
+            elif from_time:
+                if to_time:
+                    return col.delete_many({'time': {'$gte': from_time, '$lte': to_time}})
+                else:
+                    return col.delete_many({'time': {'$gte': from_time}})
+            else:
+                return col.delete_many({})
+            
+    def delete_image_data_by_uuid(self, uuid: str):
+        with self.connect() as client:
+            db = client[self.config.db_name()]
+            col = db["image-data"]
+            return col.delete_one({'uuid': uuid})
+        
             
     def insert_last_uuid(self, uuid: str):
         with self.connect() as client:
@@ -147,6 +167,12 @@ class Database(Singleton):
             'amg': query['amg']
         }
         return result
+    
+    def deleteImageData(self, time=None, from_time=None, to_time=None):
+        return self.delete_image_data(time, from_time, to_time)
+    
+    def deleteImageDataByUUID(self, uuid: str):
+        return self.delete_image_data_by_uuid(uuid)
     
     def setLastUUID(self, uuid: str):
         if self.get_last_uuid():

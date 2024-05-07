@@ -175,6 +175,7 @@ class GetImagesByTime(Resource):
         for i in data:
             uuid = i['uuid']
             if not os.path.exists(config.image_path() + f'/{uuid}.png'):
+                db.deleteImageDataByUUID(uuid)
                 continue
             raw_amg = i['amg']
             amg = [float(i) for i in raw_amg[1:-1].split(',')]
