@@ -133,6 +133,10 @@ class GetImages(Resource):
             if filename.endswith('.png'):
                 uuid = filename.split('.')[0]
                 imagedata = db.getImageDataByUUID(uuid)
+                if not imagedata:
+                    print("Remove image: ", uuid)
+                    os.remove(config.image_path() + f'/{uuid}.png')
+                    continue
                 raw_amg = imagedata['amg']
                 amg = [float(i) for i in raw_amg[1:-1].split(',')]
                 if not os.path.exists(config.predict_path() + f'/{uuid}.csv'):

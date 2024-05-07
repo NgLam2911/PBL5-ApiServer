@@ -161,6 +161,8 @@ class Database(Singleton):
     
     def getImageDataByUUID(self, uuid: str):
         query = self.get_image_data_by_uuid(uuid)
+        if not query:
+            return None
         result = {
             'time': query['time'],
             'uuid': query['uuid'],
