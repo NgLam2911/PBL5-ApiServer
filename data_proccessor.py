@@ -99,7 +99,11 @@ class DataProcessor(Singleton):
     
     @staticmethod
     def highest_chicken_temp(DataFrame) -> float:
-        return DataFrame[DataFrame['name'] == 'chicken']['temp'].max()
+        result = DataFrame[DataFrame['name'] == 'chicken']['temp'].max()
+        if result:
+            return result
+        else:
+            return -1
     
     @staticmethod
     def dftemp(raw_amg: list, raw_df: DataFrame) -> DataFrame:
