@@ -100,10 +100,9 @@ class DataProcessor(Singleton):
     @staticmethod
     def highest_chicken_temp(DataFrame) -> float:
         result = DataFrame[DataFrame['name'] == 'chicken']['temp'].max()
-        if result:
-            return result
-        else:
+        if np.isnan(result):
             return -1
+        return result
     
     @staticmethod
     def dftemp(raw_amg: list, raw_df: DataFrame) -> DataFrame:
