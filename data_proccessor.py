@@ -7,8 +7,9 @@ from utilties import Singleton
 from config import Config
 from ultralytics import YOLO
 import pandas as pd
+from database import Database
 
-class ImageProcessor(Singleton):
+class DataProcessor(Singleton):
     config = Config()
     model_path = config.model_path()
     model_type = config.model_type()
@@ -40,18 +41,20 @@ class ImageProcessor(Singleton):
         return result_df
     
     # Return pandas dataframe
-    def predict(self, image: Image, conf: float = 0.4):
+    def predict(self, image: Image, amg: list, conf: float = 0.4):
         if self.model_type == "ultralytics/yolo":
             result = self.model(image)
             prediction = self.ultralytics_to_pandas(result)
             # Filter out predictions with confidence less than `conf`
             prediction = prediction[prediction['confidence'] >= conf]
+            prediction = self.dftemp(amg, prediction)
         else:
             with torch.no_grad():
                 result = self.model(image)
             prediction = result.pandas().xyxy[0]
             # Filter out predictions with confidence less than `conf`
             prediction = prediction[prediction['confidence'] >= conf]
+            prediction = self.dftemp(amg, prediction)
         return prediction
             
     @staticmethod
@@ -60,6 +63,7 @@ class ImageProcessor(Singleton):
         for _, row in prediction.iterrows():
             xmin, ymin, xmax, ymax = map(int, row[['xmin', 'ymin', 'xmax', 'ymax']])
             label = row['name']
+            temp = row['temp']
             # Draw the rectangle on the image depending on the label
             if label == "chicken":
                 # yellow
@@ -70,6 +74,7 @@ class ImageProcessor(Singleton):
             cv2.rectangle(image_cv, (xmin, ymin), (xmax, ymax), box_color, 4)
             # Put the label on the image
             cv2.putText(image_cv, label, (xmin + 5, ymin + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 2)
+            cv2.putText(image_cv, f"{temp:.2f}", (xmin + 5, ymin + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 2)
         # Convert back to PIL Image and return
         image = Image.fromarray(cv2.cvtColor(image_cv, cv2.COLOR_BGR2RGB))
         return image
@@ -93,6 +98,10 @@ class ImageProcessor(Singleton):
         return image
     
     @staticmethod
+    def highest_chicken_temp(DataFrame) -> float:
+        return DataFrame[DataFrame['name'] == 'chicken']['temp'].max()
+    
+    @staticmethod
     def dftemp(raw_amg: list, raw_df: DataFrame) -> DataFrame:
         # Convert raw_amg to 8x8 array
         amg = np.array(raw_amg).reshape(8, 8)
@@ -114,3 +123,25 @@ class ImageProcessor(Singleton):
             else:
                 non_chicken += 1
         return labels, chicken, non_chicken
+    
+    @staticmethod
+    def resourcesConsumed(from_time: int, to_time: int) -> float:
+        db = Database()
+        data = db.getSensorData(from_time=from_time, to_time=to_time)
+        foodConsumed = 0
+        waterConsumed = 0
+        # Order the data by time
+        # data = sorted(data, key=lambda x: x['time']) 
+        # data in db is already sorted by time
+        current_food = data[0]['food_weight']
+        current_water = data[0]['water_weight']
+        for info in data:
+            if info['food_weight'] < current_food:
+                foodConsumed += current_food - info['food_weight']
+            current_food = info['food_weight']
+            if info['water_weight'] < current_water:
+                waterConsumed += current_water - info['water_weight']
+            current_water = info['water_weight']
+        return foodConsumed, waterConsumed
+            
+        

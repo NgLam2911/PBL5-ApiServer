@@ -1,6 +1,6 @@
 from flask import send_file, render_template, Blueprint
 import os
-from image_proccessor import ImageProcessor
+from data_proccessor import DataProcessor
 from PIL import Image
 import pandas as pd
 from io import BytesIO
@@ -8,7 +8,7 @@ from config import Config
 from database import Database
 
 app = Blueprint("web", __name__, url_prefix="/")
-proccessor = ImageProcessor()
+proccessor = DataProcessor()
 config = Config()
 db = Database()
 # Route to the index page first
@@ -33,7 +33,10 @@ def predict(uuid):
     if not os.path.isfile(filename):
         return {'message': 'Invalid image'}, 400
     if not os.path.exists(config.predict_path() + f'/{uuid}.csv'):
-        df = proccessor.predict(Image.open(filename))
+        imagedata = db.getImageDataByUUID(uuid)
+        raw_amg = imagedata['amg']
+        amg = [float(i) for i in raw_amg[1:-1].split(',')]
+        df = proccessor.predict(Image.open(filename), amg)
         df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
     else:
         df = pd.read_csv(config.predict_path() + f'/{uuid}.csv')

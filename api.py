@@ -3,7 +3,7 @@ from flask_restx import Api, Resource, fields
 import werkzeug
 import os
 import uuid as uuid_generator
-from image_proccessor import ImageProcessor
+from data_proccessor import DataProcessor
 from PIL import Image
 import pandas as pd
 import parsers
@@ -12,10 +12,10 @@ import time as timelib
 from config import Config
 
 app = Blueprint('api', __name__, url_prefix='/api')
-api = Api(app, version='0.2.2', title='AI Server API')
+api = Api(app, version='0.2.3', title='AI Server API')
 db = Database()
 image_api = api.namespace('image', description='Image operations')
-proccessor = ImageProcessor()
+proccessor = DataProcessor()
 config = Config()
 
 if not os.path.exists(config.image_path()):
@@ -41,7 +41,7 @@ class UploadImage(Resource):
     def post(self):
         args = parsers.upload_parser.parse_args()
         image_file = args['file']
-        amg = args['amg']
+        raw_amg = args['amg']
         if not isinstance(image_file, werkzeug.datastructures.FileStorage):
             return {'message': 'No file part'}, 400
         uuid = str(uuid_generator.uuid4())
@@ -51,10 +51,11 @@ class UploadImage(Resource):
         db.setLastUUID(uuid)
         # process image and save the result
         image = Image.open(file_path)
-        df = proccessor.predict(image)
+        amg = [float(i) for i in raw_amg[1:-1].split(',')]
+        df = proccessor.predict(image, amg)
         # save the result to a file
         df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
-        db.addImageData(time, uuid, amg)
+        db.addImageData(time, uuid, raw_amg)
         print(f'Got image: {uuid}')
         return {
             'message': 'Image uploaded successfully',
@@ -69,6 +70,7 @@ image_respond_model = api.model('ImageRespond', {
     'infared': fields.String(description='URL of the infared image'),
     'raw-amg': fields.String(description='Raw IR camera sensor data of the image'),
     'time': fields.Integer(description='Time of the image'),
+    'highest_chicken_temp': fields.Float(description='Highest temperature of the chicken in the image'),
     'labels': fields.String(description='Labels of the image'),
     'chicken': fields.String(description='Number of chicken'),
     'non-chicken': fields.String(description='Number of other')
@@ -94,23 +96,26 @@ class GetImage(Resource):
             return {'message': 'Image not found'}, 404
         if not os.path.isfile(image_path):
             return {'message': 'Invalid image'}, 400
+        imagedata = db.getImageDataByUUID(uuid)
+        raw_amg = imagedata['amg']
         if not os.path.exists(predict_path):
-            df = proccessor.predict(Image.open(image_path))
+            amg = [float(i) for i in raw_amg[1:-1].split(',')]
+            df = proccessor.predict(Image.open(image_path), amg)
             df.to_csv(predict_path, index=False)
         else:
             df = pd.read_csv(predict_path)
         labels, chicken, non_chicken = proccessor.getLabelInfo(df)
-        imagedata = db.getImageDataByUUID(uuid)
-        amg = imagedata['amg']
         time = imagedata['time']
+        hct = proccessor.highest_chicken_temp(df)
         return {
             "id": 0,
             "uuid": f"{uuid}",
             "url": f"http://{config.hostname()}/image/{uuid}",
             "predict": f"http://{config.hostname()}/predict/{uuid}",
             'infared': f"http://{config.hostname()}/infared/{uuid}",
-            "raw-amg": amg,
+            "raw-amg": raw_amg,
             "time": time,
+            "highest_chicken_temp": hct,
             "labels": labels,
             "chicken": chicken,
             "non-chicken": non_chicken
@@ -127,23 +132,26 @@ class GetImages(Resource):
         for filename in os.listdir(config.image_path()):
             if filename.endswith('.png'):
                 uuid = filename.split('.')[0]
+                imagedata = db.getImageDataByUUID(uuid)
+                raw_amg = imagedata['amg']
+                amg = [float(i) for i in raw_amg[1:-1].split(',')]
                 if not os.path.exists(config.predict_path() + f'/{uuid}.csv'):
-                    df = proccessor.predict(Image.open(config.image_path() + f'/{uuid}.png'))
+                    df = proccessor.predict(Image.open(config.image_path() + f'/{uuid}.png'), amg)
                     df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
                 else:
                     df = pd.read_csv(config.predict_path() + f'/{uuid}.csv')
                 labels, chicken, non_chicken = proccessor.getLabelInfo(df)
-                imagedata = db.getImageDataByUUID(uuid)
-                amg = imagedata['amg']
                 time = imagedata['time']
+                hct = proccessor.highest_chicken_temp(df)
                 data.append({
                     "id": id,
                     "uuid": f"{uuid}",
                     "url": f"http://{config.hostname()}/image/{uuid}",
                     "predict": f"http://{config.hostname()}/predict/{uuid}",
                     'infared': f"http://{config.hostname()}/infared/{uuid}",
-                    "raw-amg": amg,
+                    "raw-amg": raw_amg,
                     "time": time,
+                    "highest_chicken_temp": hct,
                     "labels": labels,
                     "chicken": chicken,
                     "non-chicken": non_chicken
@@ -168,22 +176,25 @@ class GetImagesByTime(Resource):
             uuid = i['uuid']
             if not os.path.exists(config.image_path() + f'/{uuid}.png'):
                 continue
+            raw_amg = i['amg']
+            amg = [float(i) for i in raw_amg[1:-1].split(',')]
             if not os.path.exists(config.predict_path() + f'/{uuid}.csv'):
-                df = proccessor.predict(Image.open(config.image_path() + f'/{uuid}.png'))
+                df = proccessor.predict(Image.open(config.image_path() + f'/{uuid}.png'), amg)
                 df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
             else:
                 df = pd.read_csv(config.predict_path() + f'/{uuid}.csv')
             labels, chicken, non_chicken = proccessor.getLabelInfo(df)
-            amg = i['amg']
             time = i['time']
+            hct = proccessor.highest_chicken_temp(df)
             result.append({
                 "id": id,
                 "uuid": f"{uuid}",
                 "url": f"http://{config.hostname()}/image/{uuid}",
                 "predict": f"http://{config.hostname()}/predict/{uuid}",
                 'infared': f"http://{config.hostname()}/infared/{uuid}",
-                "raw-amg": amg,
+                "raw-amg": raw_amg,
                 "time": time,
+                "highest_chicken_temp": hct,
                 "labels": labels,
                 "chicken": chicken,
                 "non-chicken": non_chicken
@@ -200,23 +211,26 @@ class GetLastImage(Resource):
         last = db.getLastUUID()
         if last == '0':
             return {'message': 'No images found'}, 404
+        imagedata = db.getImageDataByUUID(last)
+        raw_amg = imagedata['amg']
+        amg = [float(i) for i in raw_amg[1:-1].split(',')]
         if not os.path.exists(config.predict_path() + f'/{last}.csv'):
-            df = proccessor.predict(Image.open(config.image_path() + f'/{last}.png'))
+            df = proccessor.predict(Image.open(config.image_path() + f'/{last}.png'), amg)
             df.to_csv(config.predict_path() + f'/{last}.csv', index=False)
         else:
             df = pd.read_csv(config.predict_path() + f'/{last}.csv')
         labels, chicken, non_chicken = proccessor.getLabelInfo(df)
-        imagedata = db.getImageDataByUUID(last)
-        amg = imagedata['amg']
         time = imagedata['time']
+        hct = proccessor.highest_chicken_temp(df)
         return {
             "id": 0,
             "uuid": f"{last}",
             "url": f"http://{config.hostname()}/image/{last}",
             "predict": f"http://{config.hostname()}/predict/{last}",
             'infared': f"http://{config.hostname()}/infared/{last}",
-            "raw-amg": amg,
+            "raw-amg": raw_amg,
             "time": time,
+            "highest_chicken_temp": hct,
             "labels": labels,
             "chicken": chicken,
             "non-chicken": non_chicken
@@ -267,5 +281,24 @@ class SensorData(Resource):
         db.addSensorData(time, food_weight, water_weight)
         return {'message': 'Data added successfully'}, 200
         
-    
-        
+analyze_api = api.namespace('analyze', description='Analyze operations')
+
+consumed_respond = api.model('ConsumedRespond', {
+    'food_consumed': fields.Float(description='Food consumed in grams'),
+    'water_consumed': fields.Float(description='Water consumed in grams')
+})
+
+@analyze_api.route('/consumed')
+class Consumed(Resource):
+    @api.expect(parsers.consumed_parser)
+    @api.response(200, 'Food and water consumed', consumed_respond)
+    @api.doc(description='Get the food and water consumed in a time range')
+    def get(self):
+        args = parsers.consumed_parser.parse_args()
+        from_time = args['from_time']
+        to_time = args['to_time']
+        food, water = proccessor.resourcesConsumed(from_time, to_time)
+        return {
+            'food_consumed': food,
+            'water_consumed': water
+        }, 200
