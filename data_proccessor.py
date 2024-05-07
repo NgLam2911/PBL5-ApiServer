@@ -105,12 +105,13 @@ class DataProcessor(Singleton):
     def dftemp(raw_amg: list, raw_df: DataFrame) -> DataFrame:
         # Convert raw_amg to 8x8 array
         amg = np.array(raw_amg).reshape(8, 8)
+        df = DataFrame([], columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name', 'temp'])
         for _, row in raw_df.iterrows():
-            xmin, ymin, xmax, ymax = map(int, row[['xmin', 'ymin', 'xmax', 'ymax']])
+            xmin, ymin, xmax, ymax, confidence, classs, name = row[['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name']]
             # Caculate the average temperature in the bounding box in 8x8 array (image resolution is 800x600)
             temp = amg[ymin // 75:ymax // 75, xmin // 100:xmax // 100].mean()
-            raw_df.loc[_, 'temp'] = temp
-        return raw_df
+            df = df.append({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax, 'confidence': confidence, 'class': classs, 'name': name, 'temp': temp}, ignore_index=True)
+        return df
     
     @staticmethod
     def getLabelInfo(prediction: DataFrame):
