@@ -12,7 +12,7 @@ import time as timelib
 from config import Config
 
 app = Blueprint('api', __name__, url_prefix='/api')
-api = Api(app, version='0.2.3', title='AI Server API')
+api = Api(app, version='0.2.4', title='AI Server API')
 db = Database()
 image_api = api.namespace('image', description='Image operations')
 proccessor = DataProcessor()
