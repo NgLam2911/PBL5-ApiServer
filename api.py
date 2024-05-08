@@ -72,8 +72,7 @@ image_respond_model = api.model('ImageRespond', {
     'time': fields.Integer(description='Time of the image'),
     'highest_chicken_temp': fields.Float(description='Highest temperature of the chicken in the image'),
     'labels': fields.String(description='Labels of the image'),
-    'chicken': fields.String(description='Number of chicken'),
-    'non-chicken': fields.String(description='Number of other')
+    'chicken': fields.String(description='Number of chicken')
 })
 
 image_respond_model_fail = api.model('ImageRespondFail', {
@@ -117,8 +116,7 @@ class GetImage(Resource):
             "time": time,
             "highest_chicken_temp": hct,
             "labels": labels,
-            "chicken": chicken,
-            "non-chicken": non_chicken
+            "chicken": chicken
         }, 200 
 
 # Get all images
@@ -157,8 +155,7 @@ class GetImages(Resource):
                     "time": time,
                     "highest_chicken_temp": hct,
                     "labels": labels,
-                    "chicken": chicken,
-                    "non-chicken": non_chicken
+                    "chicken": chicken
                 })
                 id += 1
         return data, 200
@@ -201,8 +198,7 @@ class GetImagesByTime(Resource):
                 "time": time,
                 "highest_chicken_temp": hct,
                 "labels": labels,
-                "chicken": chicken,
-                "non-chicken": non_chicken
+                "chicken": chicken
             })
             id += 1
         return result, 200
@@ -237,8 +233,7 @@ class GetLastImage(Resource):
             "time": time,
             "highest_chicken_temp": hct,
             "labels": labels,
-            "chicken": chicken,
-            "non-chicken": non_chicken
+            "chicken": chicken
         }, 200
         
 deleteimage_respond = api.model('DeleteImageRespond', {
