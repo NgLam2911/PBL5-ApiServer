@@ -53,6 +53,11 @@ class UploadImage(Resource):
         image = Image.open(file_path)
         amg = [float(i) for i in raw_amg[1:-1].split(',')]
         df = proccessor.predict(image, amg)
+        label, chicken, non_chicken = proccessor.getLabelInfo(df)
+        if label == 0 :
+            return {
+                'message': 'No chicken detected in the image'
+            }, 400
         # save the result to a file
         df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
         db.addImageData(time, uuid, raw_amg)
