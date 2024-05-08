@@ -241,11 +241,15 @@ class GetLastImage(Resource):
             "non-chicken": non_chicken
         }, 200
         
+deleteimage_respond = api.model('DeleteImageRespond', {
+    'message': fields.String(description='Message', default='Image deleted successfully')
+})
+        
 @image_api.route('/delete')
 @api.doc("Delete an image")
 class DeleteImage(Resource):
     @api.expect(parsers.getimage_parser)
-    @api.response(200, 'Image deleted successfully', {'message': 'Image deleted successfully'})
+    @api.response(200, 'Image deleted successfully', deleteimage_respond)
     def get(self):
         args = parsers.getimage_parser.parse_args()
         uuid = args['uuid']
