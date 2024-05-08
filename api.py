@@ -250,7 +250,7 @@ deleteimage_respond = api.model('DeleteImageRespond', {
 class DeleteImage(Resource):
     @api.expect(parsers.getimage_parser)
     @api.response(200, 'Image deleted successfully', deleteimage_respond)
-    def get(self):
+    def delete(self):
         args = parsers.getimage_parser.parse_args()
         uuid = args['uuid']
         image_path = config.image_path() + f'/{uuid}.png'
