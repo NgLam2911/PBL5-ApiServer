@@ -241,6 +241,23 @@ class GetLastImage(Resource):
             "non-chicken": non_chicken
         }, 200
         
+@image_api.route('/delete')
+@api.doc("Delete an image")
+class DeleteImage(Resource):
+    @api.expect(parsers.getimage_parser)
+    @api.response(200, 'Image deleted successfully', {'message': 'Image deleted successfully'})
+    def get(self):
+        args = parsers.getimage_parser.parse_args()
+        uuid = args['uuid']
+        image_path = config.image_path() + f'/{uuid}.png'
+        predict_path = config.predict_path() + f'/{uuid}.csv'
+        if os.path.exists(image_path):
+            os.remove(image_path)
+        if os.path.exists(predict_path):
+            os.remove(predict_path)
+        db.deleteImageDataByUUID(uuid)
+        return {'message': 'Image deleted successfully'}, 200
+        
 sensor_api = api.namespace('sensor', description='Sensor operations')
 
 sensor_data_respond = api.model('SensorDataRespond', {
