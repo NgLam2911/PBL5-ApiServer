@@ -42,5 +42,8 @@ py main.py
 python3 main.py
 ```
 
+# Why "utilties" ?
+* It's an intended typo. Don't make any PR for it.
+
 
 
