@@ -128,8 +128,15 @@ class GetImage(Resource):
 @image_api.route('/getall')
 @api.doc(description='Get all images')
 class GetImages(Resource):
+    @api.expect(parsers.getall_parser)
     @api.response(200, 'Images found', [image_respond_model])
     def get(self):
+        args = parsers.getall_parser.parse_args()
+        limit = args['limit']
+        if limit == None:
+            limit = 200
+        if limit <= 0:
+            limit = 999999999
         data = []
         id = 0
         for filename in os.listdir(config.image_path()):
@@ -162,6 +169,8 @@ class GetImages(Resource):
                     "labels": labels,
                     "chicken": chicken
                 })
+                if id >= limit:
+                    break
                 id += 1
         return data, 200
     
@@ -178,6 +187,11 @@ class GetImagesByTime(Resource):
         minimum_temp = args['minimum_temp']
         if (minimum_temp == None):
             minimum_temp = -999999999
+        limit = args['limit']
+        if limit == None:
+            limit = 200
+        if limit <= 0:
+            limit = 999999999
         data = db.getImageData(time, from_time, to_time)
         result = []
         id = 0
@@ -210,6 +224,8 @@ class GetImagesByTime(Resource):
                 "labels": labels,
                 "chicken": chicken
             })
+            if id >= limit:
+                break
             id += 1
         return result, 200
 

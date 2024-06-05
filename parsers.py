@@ -9,11 +9,15 @@ upload_parser.add_argument('amg', type=str, required=True, help='Raw IR camera s
 getimage_parser = reqparse.RequestParser()
 getimage_parser.add_argument('uuid', type=str, required=True, help='id of the image', location='args')
 
+getall_parser = reqparse.RequestParser()
+getall_parser.add_argument('limit', type=int, required=False, help='Limit of the number of images to return, default is 200', location='args')
+
 getimagetime_parser = reqparse.RequestParser()
 getimagetime_parser.add_argument('time', type=int, required=False, help='Time of the image in Unix timestamp', location='args')
 getimagetime_parser.add_argument('from_time', type=int, required=False, help='From time of the image in Unix timestamp', location='args')
 getimagetime_parser.add_argument('to_time', type=int, required=False, help='To time of the image in Unix timestamp', location='args')
 getimagetime_parser.add_argument('minimum_temp', type=float, required=False, help='Minimum highest chicken temp in the image', location='args')
+getimagetime_parser.add_argument('limit', type=int, required=False, help='Limit of the number of images to return, default is 200, 0 or negative for unlimited', location='args')
 
 getsensordata_parser = reqparse.RequestParser()
 getsensordata_parser.add_argument('time', type=int, required=False, help='Time of the data in Unix timestamp', location='args')
