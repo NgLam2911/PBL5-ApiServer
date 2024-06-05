@@ -13,6 +13,7 @@ getimagetime_parser = reqparse.RequestParser()
 getimagetime_parser.add_argument('time', type=int, required=False, help='Time of the image in Unix timestamp', location='args')
 getimagetime_parser.add_argument('from_time', type=int, required=False, help='From time of the image in Unix timestamp', location='args')
 getimagetime_parser.add_argument('to_time', type=int, required=False, help='To time of the image in Unix timestamp', location='args')
+getimagetime_parser.add_argument('minimum_temp', type=float, required=False, help='Minimum highest chicken temp in the image', location='args')
 
 getsensordata_parser = reqparse.RequestParser()
 getsensordata_parser.add_argument('time', type=int, required=False, help='Time of the data in Unix timestamp', location='args')

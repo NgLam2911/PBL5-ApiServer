@@ -175,6 +175,9 @@ class GetImagesByTime(Resource):
         time = args['time']
         from_time = args['from_time']
         to_time = args['to_time']
+        minimum_temp = args['minimum_temp']
+        if (minimum_temp == None):
+            minimum_temp = -999999999
         data = db.getImageData(time, from_time, to_time)
         result = []
         id = 0
@@ -193,6 +196,8 @@ class GetImagesByTime(Resource):
             labels, chicken, non_chicken = proccessor.getLabelInfo(df)
             time = i['time']
             hct = proccessor.highest_chicken_temp(df)
+            if hct < minimum_temp:
+                continue
             result.append({
                 "id": id,
                 "uuid": f"{uuid}",
