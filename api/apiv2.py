@@ -53,7 +53,7 @@ class UploadImage(Resource):
         image = Image.open(file_path)
         amg = [float(i) for i in raw_amg[1:-1].split(',')]
         df = proccessor.predict(image, amg)
-        label, chicken, non_chicken = proccessor.getLabelInfo(df)
+        label, _, _ = proccessor.getLabelInfo(df)
         if label == 0 :
             return {
                 'message': 'No chicken detected in the image'
@@ -108,7 +108,7 @@ class GetImage(Resource):
             df.to_csv(predict_path, index=False)
         else:
             df = pd.read_csv(predict_path)
-        labels, chicken, non_chicken = proccessor.getLabelInfo(df)
+        labels, chicken, _ = proccessor.getLabelInfo(df)
         time = imagedata['time']
         hct = proccessor.highest_chicken_temp(df)
         return {
@@ -157,7 +157,7 @@ class SearchImage(Resource):
                 df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
             else:
                 df = pd.read_csv(config.predict_path() + f'/{uuid}.csv')
-            labels, chicken = proccessor.getLabelInfo(df)
+            labels, chicken, _ = proccessor.getLabelInfo(df)
             time = i['time']
             hct = proccessor.highest_chicken_temp(df)
             if hct < minimum_temp:
@@ -196,7 +196,7 @@ class GetLastImage(Resource):
             df.to_csv(config.predict_path() + f'/{last}.csv', index=False)
         else:
             df = pd.read_csv(config.predict_path() + f'/{last}.csv')
-        labels, chicken, non_chicken = proccessor.getLabelInfo(df)
+        labels, chicken, _ = proccessor.getLabelInfo(df)
         time = imagedata['time']
         hct = proccessor.highest_chicken_temp(df)
         return {
