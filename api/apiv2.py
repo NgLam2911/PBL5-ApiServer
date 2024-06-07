@@ -11,8 +11,8 @@ from database import Database
 import time as timelib
 from config import Config
 
-app = Blueprint('api', __name__, url_prefix='/api')
-api = Api(app, version='0.2.4', title='AI Server API')
+app = Blueprint('api/v2', __name__, url_prefix='/api/v2')
+api = Api(app, version='0.1.0', title='AI Server API')
 db = Database()
 image_api = api.namespace('image', description='Image operations')
 proccessor = DataProcessor()
@@ -53,7 +53,7 @@ class UploadImage(Resource):
         image = Image.open(file_path)
         amg = [float(i) for i in raw_amg[1:-1].split(',')]
         df = proccessor.predict(image, amg)
-        label, chicken, non_chicken = proccessor.getLabelInfo(df)
+        label = proccessor.getLabelInfo(df)
         if label == 0 :
             return {
                 'message': 'No chicken detected in the image'
@@ -108,7 +108,7 @@ class GetImage(Resource):
             df.to_csv(predict_path, index=False)
         else:
             df = pd.read_csv(predict_path)
-        labels, chicken, non_chicken = proccessor.getLabelInfo(df)
+        labels, chicken = proccessor.getLabelInfo(df)
         time = imagedata['time']
         hct = proccessor.highest_chicken_temp(df)
         return {
@@ -122,65 +122,15 @@ class GetImage(Resource):
             "highest_chicken_temp": hct,
             "labels": labels,
             "chicken": chicken
-        }, 200 
-
-# Get all images
-@image_api.route('/getall')
-@api.doc(description='Get all images')
-class GetImages(Resource):
-    @api.expect(parsers.getall_parser)
-    @api.response(200, 'Images found', [image_respond_model])
-    def get(self):
-        args = parsers.getall_parser.parse_args()
-        limit = args['limit']
-        if limit == None:
-            limit = 200
-        if limit <= 0:
-            limit = 999999999
-        data = []
-        id = 0
-        for filename in os.listdir(config.image_path()):
-            if filename.endswith('.png'):
-                uuid = filename.split('.')[0]
-                imagedata = db.getImageDataByUUID(uuid)
-                if not imagedata:
-                    print("Remove image: ", uuid)
-                    os.remove(config.image_path() + f'/{uuid}.png')
-                    continue
-                raw_amg = imagedata['amg']
-                amg = [float(i) for i in raw_amg[1:-1].split(',')]
-                if not os.path.exists(config.predict_path() + f'/{uuid}.csv'):
-                    df = proccessor.predict(Image.open(config.image_path() + f'/{uuid}.png'), amg)
-                    df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
-                else:
-                    df = pd.read_csv(config.predict_path() + f'/{uuid}.csv')
-                labels, chicken, non_chicken = proccessor.getLabelInfo(df)
-                time = imagedata['time']
-                hct = proccessor.highest_chicken_temp(df)
-                data.append({
-                    "id": id,
-                    "uuid": f"{uuid}",
-                    "url": f"http://{config.hostname()}/image/{uuid}",
-                    "predict": f"http://{config.hostname()}/predict/{uuid}",
-                    'infared': f"http://{config.hostname()}/infared/{uuid}",
-                    "raw-amg": raw_amg,
-                    "time": time,
-                    "highest_chicken_temp": hct,
-                    "labels": labels,
-                    "chicken": chicken
-                })
-                if id >= limit:
-                    break
-                id += 1
-        return data, 200
+        }, 200
     
-@image_api.route('/getbytime')
+@image_api.route('/search')
 @api.doc(description='Get images by time')
-class GetImagesByTime(Resource):
-    @api.expect(parsers.getimagetime_parser)
+class SearchImage(Resource):
+    @api.expect(parsers.searchimage_parser)
     @api.response(200, 'Images found', [image_respond_model])
     def get(self):
-        args = parsers.getimagetime_parser.parse_args()
+        args = parsers.searchimage_parser.parse_args()
         time = args['time']
         from_time = args['from_time']
         to_time = args['to_time']
@@ -207,7 +157,7 @@ class GetImagesByTime(Resource):
                 df.to_csv(config.predict_path() + f'/{uuid}.csv', index=False)
             else:
                 df = pd.read_csv(config.predict_path() + f'/{uuid}.csv')
-            labels, chicken, non_chicken = proccessor.getLabelInfo(df)
+            labels, chicken = proccessor.getLabelInfo(df)
             time = i['time']
             hct = proccessor.highest_chicken_temp(df)
             if hct < minimum_temp:
