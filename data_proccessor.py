@@ -17,6 +17,9 @@ class DataProcessor(Singleton):
     
     def __init__(self):
         # load yolo model from model_path
+        if self.config.ai() == "false":
+            return
+            
         if not hasattr(self, 'model'):
             # Because of ultralytics/ultralytics doesnt fully support pytorch hub.
             if self.model_type == "ultralytics/yolo":
@@ -26,7 +29,6 @@ class DataProcessor(Singleton):
                 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
                 self.model = torch.hub.load(self.model_type, self.model_name, self.model_path, trust_repo=True, force_reload=True)
                 self.model.eval()
-        pass
     
     def ultralytics_to_pandas(self, results):
         boxes_list = results[0].boxes.data.tolist()
@@ -42,6 +44,8 @@ class DataProcessor(Singleton):
     
     # Return pandas dataframe
     def predict(self, image: Image, amg: list, conf: float = 0.4):
+        if self.config.ai() == "false":
+            return pd.DataFrame(columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name', 'temp'])
         if self.model_type == "ultralytics/yolo":
             result = self.model(image)
             prediction = self.ultralytics_to_pandas(result)

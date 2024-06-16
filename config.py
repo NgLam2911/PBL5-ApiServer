@@ -11,6 +11,7 @@ class Config(Singleton):
                 with open(config_file) as f:
                     self.config = json.load(f)
                     self.hostnamev = self.config['hostname']
+                    self.aiv = self.config['ai']
                     self.model_pathv = self.config['model_path']
                     self.model_typev = self.config['model_type']
                     self.model_namev = self.config['model_name']
@@ -23,6 +24,7 @@ class Config(Singleton):
                     self.db_auth_sourcev = self.config['database']['auth']['authSource']
             except:
                 self.hostnamev = "localhost:5000"
+                self.aiv = "true"
                 self.model_pathv = "yolov5s.pt"
                 self.model_typev = "ultralytics/yolo"
                 self.model_namev = "yolov5s"
@@ -37,6 +39,7 @@ class Config(Singleton):
                 self.db_auth_sourcev = "admin"
                 self.config = {
                     "hostname": self.hostnamev,
+                    "ai": "true",
                     "model_path": self.model_pathv,
                     "model_type": self.model_typev,
                     "model_name": self.model_namev,
@@ -58,6 +61,9 @@ class Config(Singleton):
                 
     def hostname(self):
         return self.hostnamev
+    
+    def ai(self):
+        return self.aiv
     
     def model_path(self):
         return self.model_pathv
